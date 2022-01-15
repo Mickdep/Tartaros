@@ -11,12 +11,23 @@ A reconaissance automation tool written in Rust.
 
 ## Installation
 
-**In development**
+### Install Rust (if needed)
+```bash
+curl https://sh.rustup.rs -sSf | sh
+```
+### Install Tartaros
+```bash
+git clone https://github.com/Mickdep/Tartaros.git
+cd Tartaros
+cargo build --release
+```
 
 
 ## Usage
 
-**In development**
+```
+tartaros <ip_address>
+```
 
 
 ## Demo
