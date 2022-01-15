@@ -1,7 +1,7 @@
 # Tartaros
 
 <h2 align="center">
-A customized reconaissance automation tool written in Rust.
+A reconaissance automation tool written in Rust.
 </h2>
 
 <p align="center">

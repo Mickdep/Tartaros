@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 clap = "3.0.7"
 colored = "2.0.0"
+comfy-table = "5.0.0"
