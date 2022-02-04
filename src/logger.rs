@@ -5,7 +5,7 @@ pub fn print_ok(msg: &str){
 }
 
 pub fn print_err(msg: &str){
-    println!("{} {}", "[!]".red(), msg.red())
+    eprintln!("{} {}", "[!]".red(), msg.red())
 }
 
 pub fn print_warn(msg: &str){

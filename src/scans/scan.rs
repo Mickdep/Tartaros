@@ -1,0 +1,1 @@
+//Maybe make this an interface or something, and have the concrete scantypes implement this interface.
