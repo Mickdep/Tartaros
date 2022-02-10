@@ -1,11 +1,5 @@
 use colored::Colorize;
-use core::num::dec2flt::parse;
-use std::{
-    env,
-    fmt::format,
-    path::{Path, PathBuf},
-    process::exit, fs::create_dir,
-};
+use std::{env, io, path::PathBuf, process::exit, fs::create_dir};
 use url::{Host, ParseError};
 use which::which;
 mod engine;
@@ -30,27 +24,28 @@ fn main() {
 
     //We exit if the target can not be parsed to a valid Host.
     if let Ok(target) = parse_target(&args[1]) {
-        if !nmap_is_installed() {
+        if nmap_is_installed() {
             //Nmap is required for this program to even run. If it's not installed, exit.
             terminate(
                 "Nmap is not installed, but it is required. Install it with: sudo apt install nmap",
             );
         } else {
-          if let Ok(res) = create_dir(){
-            engine::run(target);
-            
-          }else{
-            terminate("Unable to create an output directory for storing intermediate results. Please change your working directory or run this program as a high-privileged user.");
-          }
+            if let Ok(output_dir) = create_output_dir() {
+                engine::run(target, output_dir);
+            } else {
+                terminate("Unable to create an output directory for storing intermediate results. Please change your working directory or run this program as a high-privileged user.");
+            }
         }
     }
 }
 
+/// Parses the target to a Host.
 pub fn parse_target(target_raw: &str) -> Result<String, ParseError> {
     let target = Host::parse(target_raw)?;
     Ok(target.to_string())
 }
 
+/// Checks whether Nmap is installed by using 'which'.
 fn nmap_is_installed() -> bool {
     if let Ok(_) = which("nmap") {
         return true;
@@ -59,17 +54,15 @@ fn nmap_is_installed() -> bool {
     false
 }
 
-fn create_output_dir() -> std::io::Result<()> {
-    if let Ok(mut path) = env::current_dir() {
-        path.push(output_file);
-        arg_collection.file = path;
-    } else {
-        return Err("Could not resolve valid file path");
-    }
-
-    false
+/// Attempts to create a directory '.tartaros_temp' in the current working directory for storing intermediate results of the separate scans that run.
+fn create_output_dir() -> Result<PathBuf, io::Error> {
+    let mut path = env::current_dir()?;
+    path.push(".tartaros_temp");
+    create_dir(&path)?;
+    Ok(path)
 }
 
+/// Outputs an error message and terminates the process.
 fn terminate(msg: &str) {
     logger::print_err(&format!("Error: {}", msg));
     exit(1);
