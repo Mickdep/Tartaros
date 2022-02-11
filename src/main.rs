@@ -1,9 +1,10 @@
 use colored::Colorize;
-use std::{env, io, path::PathBuf, process::exit, fs::create_dir};
+use std::{env, io, path::PathBuf, process::exit, fs::{create_dir, remove_dir_all}};
 use url::{Host, ParseError};
 use which::which;
 mod engine;
 mod logger;
+mod scans;
 /**
 
 So what we're doing is I'm creating a struct with all Scantypes in them. Nmap, Feroxbuster, etc.
@@ -24,14 +25,17 @@ fn main() {
 
     //We exit if the target can not be parsed to a valid Host.
     if let Ok(target) = parse_target(&args[1]) {
-        if nmap_is_installed() {
+        if !nmap_is_installed() {
             //Nmap is required for this program to even run. If it's not installed, exit.
             terminate(
                 "Nmap is not installed, but it is required. Install it with: sudo apt install nmap",
             );
         } else {
             if let Ok(output_dir) = create_output_dir() {
-                engine::run(target, output_dir);
+                engine::run(target, output_dir.clone());
+                // if let Err(_) = remove_dir_all(output_dir){
+                //     terminate("Unable to delete the temporary output directory '.tartaros_temp'. Please try to do so manually.");
+                // }
             } else {
                 terminate("Unable to create an output directory for storing intermediate results. Please change your working directory or run this program as a high-privileged user.");
             }
@@ -58,11 +62,16 @@ fn nmap_is_installed() -> bool {
 fn create_output_dir() -> Result<PathBuf, io::Error> {
     let mut path = env::current_dir()?;
     path.push(".tartaros_temp");
-    create_dir(&path)?;
+    //If there was an error when trying to create the directory (due to existence), attempt to remove it and create it again.
+    if let Err(_) = create_dir(&path){
+        remove_dir_all(&path)?;
+        create_dir(&path)?;
+    }
+
     Ok(path)
 }
 
-/// Outputs an error message and terminates the process.
+/// Deletes any remaining files, outputs an error message and terminates the process.
 fn terminate(msg: &str) {
     logger::print_err(&format!("Error: {}", msg));
     exit(1);
