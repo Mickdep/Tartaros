@@ -11,7 +11,6 @@ pub fn run(target: String, output_dir: PathBuf) {
     if !res {
         logger::print_err("Nmap did not run");
     } else {
-        logger::print_ok("Nmap successfully finished execution");
         nmap_scan.parse_output();
         nmap_scan.print_results();
     }
