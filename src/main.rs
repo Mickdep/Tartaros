@@ -60,8 +60,7 @@ fn nmap_is_installed() -> bool {
 
 /// Attempts to create a directory '.tartaros_temp' in the current working directory for storing intermediate results of the separate scans that run.
 fn create_output_dir() -> Result<PathBuf, io::Error> {
-    let mut path = env::current_dir()?;
-    path.push(".tartaros_temp");
+    let path = PathBuf::from(".tartaros_temp");
     //If there was an error when trying to create the directory (due to existence), attempt to remove it and create it again.
     if let Err(_) = create_dir(&path){
         remove_dir_all(&path)?;

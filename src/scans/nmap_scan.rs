@@ -1,78 +1,115 @@
-use std::{process::{Command, Stdio}, path::PathBuf, io::BufReader, fs::File};
+use std::{
+    fs::File,
+    io::BufReader,
+    iter::Scan,
+    path::PathBuf,
+    process::{Command, Stdio},
+};
 
-use xml::reader::XmlEvent;
-
+use super::scan::{self, ScanTrait};
 use crate::logger;
-
-use super::scan::ScanTrait;
+use comfy_table::Table;
+use xml::reader::XmlEvent;
 
 pub struct NmapScan {
     output_dir: PathBuf,
+    scan_results: Vec<ScanResult>,
+    scan_args: Vec<String>,
+}
+
+struct ScanResult {
+    port: u16,
+    service_name: String,
+    service_version: String,
 }
 
 impl NmapScan {
     pub fn new(mut output_dir: PathBuf) -> NmapScan {
         output_dir.push("nmap");
-        NmapScan { output_dir }
+        NmapScan {
+            output_dir,
+            scan_results: Vec::new(),
+            scan_args: vec![
+                String::from("-sV"),
+                String::from("-sC"),
+                String::from("-oX"),
+            ],
+        }
     }
 }
 
 impl ScanTrait for NmapScan {
-    fn start(&self, target: &str) -> bool {
-        logger::print_ok("Running Nmap scan...");
-        if let Ok(mut child) = Command::new("nmap")
+    fn start(&mut self, target: &str) -> bool {
+        logger::print_ok("Running Nmap...");
+        let mut args = vec![
+            self.output_dir.to_str().unwrap().to_string(),
+            target.to_string(),
+        ];
+        self.scan_args.append(&mut args);
+
+        logger::print_ok(&format!("Command used: nmap {}", self.scan_args.join(" ")));
+
+        match Command::new("nmap")
             .stdout(Stdio::null())
-            .args(["-sV", "-sC", "-oX", self.output_dir.to_str().unwrap(), target])
+            .stderr(Stdio::null())
+            .args(&self.scan_args)
             .spawn()
         {
-            if let Ok(status) = child.wait() {
-                if status.success() {
-                    return true;
+            Ok(mut child) => {
+                if let Ok(status) = child.wait() {
+                    if status.success() {
+                        return true;
+                    }
                 }
+            }
+            Err(err) => {
+                logger::print_err(&err.to_string());
             }
         }
 
         false
     }
 
-    fn parse_output(&self) {
+    fn parse_output(&mut self) {
         // let xmldoc = xml::reader::EventReader::new(self.output_dir.to_str().unwrap());'
         let file = File::open(&self.output_dir).unwrap();
         let buf_reader = BufReader::new(file);
         let xml_reader = xml::EventReader::new(buf_reader);
         for elem in xml_reader {
             match elem {
-                Ok(XmlEvent::StartElement {name, attributes, ..}) => {
+                Ok(XmlEvent::StartElement {
+                    name, attributes, ..
+                }) => {
+                    let mut scan_result = ScanResult {
+                        port: Default::default(),
+                        service_name: Default::default(),
+                        service_version: Default::default(),
+                    };
+
                     if name.local_name.eq("port") {
                         for attr in &attributes {
-                            if attr.name.local_name.eq("portid"){
-                                logger::print_warn(&format!("Port {} is open", attr.value));
+                            if attr.name.local_name.eq("portid") {
+                                scan_result.port = attr.value.parse::<u16>().unwrap();
                             }
                         }
                     }
 
                     if name.local_name.eq("service") {
-                        let mut output = String::from("");
                         for attr in &attributes {
-                            if attr.name.local_name.eq("product"){
-                                output.push_str("Product ");
-                                output.push_str(&attr.value);
+                            if attr.name.local_name.eq("product") {
+                                scan_result.service_name = attr.value.clone();
                             }
 
                             if attr.name.local_name.eq("version") {
-                                output.push_str(" with version ");
-                                output.push_str(&attr.value);
+                                scan_result.service_version = attr.value.clone();
                             }
                         }
-                        logger::print_warn(&format!("Service: {}", output));
                     }
-                }
 
-                Ok(XmlEvent::EndElement { name }) => {
-                    continue;
+                    self.scan_results.push(scan_result);
                 }
                 Err(_) => {
-                    logger::print_err("Error reading Nmap XML");
+                    logger::print_err("Error reading Nmap XML entry");
                 }
 
                 _ => {}
@@ -81,7 +118,11 @@ impl ScanTrait for NmapScan {
     }
 
     fn print_results(&self) {
-        todo!()
+        
+        let mut table = Table::new();
+
+        // table.set_header(vec!["Port", "Service", "Version"])
+        //     .add_row(row);
     }
 
     fn triggers_on(&self) {
