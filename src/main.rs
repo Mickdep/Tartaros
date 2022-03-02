@@ -17,7 +17,6 @@ These triggers are typically ports that are discovered to be open. If a scantype
 fn main() {
     print_banner();
     let args: Vec<String> = env::args().collect();
-
     //Not enough args. This will probably be replaced by code to configure the 'Clap' crate.
     if args.len() < 2 {
         terminate("No target provided. Usage: tartaros <ip|hostname>");
@@ -62,10 +61,10 @@ fn nmap_is_installed() -> bool {
 fn create_output_dir() -> Result<PathBuf, io::Error> {
     let path = PathBuf::from(".tartaros_temp");
     //If there was an error when trying to create the directory (due to existence), attempt to remove it and create it again.
-    // if let Err(_) = create_dir(&path){
-    //     remove_dir_all(&path)?;
-    //     create_dir(&path)?;
-    // }
+    if let Err(_) = create_dir(&path){
+        remove_dir_all(&path)?;
+        create_dir(&path)?;
+    }
 
     Ok(path)
 }
@@ -130,6 +129,6 @@ fn print_banner() {
     ░      ▒   ▒▒ ░  ░▒ ░ ▒░    ░      ▒   ▒▒ ░  ░▒ ░ ▒░  ░ ▒ ▒░ ░ ░▒  ░ ░
   ░        ░   ▒     ░░   ░   ░        ░   ▒     ░░   ░ ░ ░ ░ ▒  ░  ░  ░
                ░  ░   ░                    ░  ░   ░         ░ ░        ░  "
-        .green();
+        .bright_green();
     println!("{}", text);
 }
