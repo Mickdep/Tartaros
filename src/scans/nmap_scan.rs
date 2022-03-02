@@ -1,12 +1,13 @@
+use std::fmt;
+use colored::Colorize;
 use std::{
     fs::File,
     io::BufReader,
-    iter::Scan,
     path::PathBuf,
     process::{Command, Stdio},
 };
 
-use super::scan::{self, ScanTrait};
+use super::scan::{ScanTrait};
 use crate::logger::{self, print_warn};
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use xml::reader::XmlEvent;
@@ -17,11 +18,55 @@ pub struct NmapScan {
     scan_args: Vec<String>,
 }
 
+
+enum PortStatus {
+    Open,
+    Filtered,
+    None
+}
+
+impl fmt::Display for PortStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PortStatus::Open => {
+                let out = "open".green();
+                write!(f, "{}", out)
+            },
+            PortStatus::Filtered => {
+                let out = "filtered".yellow();
+                write!(f, "{}", out)
+            },
+            PortStatus::None => {
+                write!(f, "None")
+            },
+        }
+    }
+}
+
+struct Port {
+    num: String,
+    status: PortStatus
+}
+
+impl fmt::Display for Port {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.num, self.status)
+    }
+}
+
 struct ScanResult {
-    port: String,
+    port: Port,
     service_name: String,
     service_version: String,
 }
+
+/*
+Scripts to integrate into output (interesting for the user):
+
+http-server-header
+http-title
+
+*/
 
 impl NmapScan {
     pub fn new(mut output_dir: PathBuf) -> NmapScan {
@@ -49,38 +94,42 @@ impl ScanTrait for NmapScan {
 
         logger::print_ok(&format!("Command used: nmap {}", self.scan_args.join(" ")));
 
-        match Command::new("nmap")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .args(&self.scan_args)
-            .spawn()
-        {
-            Ok(mut child) => {
-                if let Ok(status) = child.wait() {
-                    if status.success() {
-                        return true;
-                    }
-                }
-            }
-            Err(err) => {
-                logger::print_err(&err.to_string());
-            }
-        }
+        // match Command::new("nmap")
+        //     .stdout(Stdio::null())
+        //     .stderr(Stdio::null())
+        //     .args(&self.scan_args)
+        //     .spawn()
+        // {
+        //     Ok(mut child) => {
+        //         if let Ok(status) = child.wait() {
+        //             if status.success() {
+        //                 return true;
+        //             }
+        //         }
+        //     }
+        //     Err(err) => {
+        //         logger::print_err(&err.to_string());
+        //     }
+        // }
 
-        false
+        true
     }
 
     fn parse_output(&mut self) {
-        // let xmldoc = xml::reader::EventReader::new(self.output_dir.to_str().unwrap());'
+        //Open the XML file and create a buffered reader for the XML reader.
         let file = File::open(&self.output_dir).unwrap();
         let buf_reader = BufReader::new(file);
         let xml_reader = xml::EventReader::new(buf_reader);
+
+        //Create an object that will constantly be updated
         let mut scan_result = ScanResult {
-            port: String::from(""),
+            port: Port {
+                num: String::from(""),
+                status: PortStatus::None
+            },
             service_name: String::from(""),
             service_version: String::from(""),
         };
-        let mut done = false;
         for elem in xml_reader {
             match elem {
                 Ok(XmlEvent::StartElement {
@@ -89,13 +138,25 @@ impl ScanTrait for NmapScan {
                     if name.local_name.eq("port") {
                         for attr in &attributes {
                             if attr.name.local_name.eq("portid") {
-                                scan_result.port.push_str(&attr.value);
+                                scan_result.port.num.push_str(&attr.value);
+                            }
+                        }
+                    }
+
+                    if name.local_name.eq("state") {
+                        for attr in &attributes {
+                            if attr.name.local_name.eq("state") {
+                                if attr.value == "open"{
+                                    scan_result.port.status = PortStatus::Open;
+                                }else{
+                                    scan_result.port.status = PortStatus::Filtered;
+                                }
                             }
                         }
                     }
 
                     if name.local_name.eq("service") {
-                        for attr in &attributes {
+                        for attr in attributes {
                             if attr.name.local_name.eq("name") {
                                 scan_result.service_name.push_str(&attr.value);
                             }
@@ -109,20 +170,25 @@ impl ScanTrait for NmapScan {
 
                             if attr.name.local_name.eq("version") {
                                 scan_result.service_version.push_str(&attr.value.clone());
-                                done = true;
                             }
                         }
                     }
 
-                    if done {
+                    //TODO: Add additional script details to the output.
+                }
+
+                Ok(XmlEvent::EndElement { name }) => {
+                    if name.local_name.eq("port") {
+                        //Reinstantiate the ScanResult object so it can form a new instance.
                         self.scan_results.push(scan_result);
                         scan_result = ScanResult {
-                            port: String::from(""),
+                            port: Port {
+                                num: String::from(""),
+                                status: PortStatus::None
+                            },
                             service_name: String::from(""),
                             service_version: String::from(""),
-                        };
-
-                        done = false;
+                        }
                     }
                 }
                 Err(_) => {
@@ -147,12 +213,8 @@ impl ScanTrait for NmapScan {
             .apply_modifier(UTF8_ROUND_CORNERS);
 
         for result in &self.scan_results {
-            println!(
-                "{}/{}/{}",
-                &result.port, &result.service_name, &result.service_version,
-            );
             table.add_row(vec![
-                &result.port,
+                &result.port.to_string(),
                 &result.service_name,
                 &result.service_version,
             ]);
