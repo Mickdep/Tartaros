@@ -1,5 +1,5 @@
-use std::fmt;
 use std::{
+    fmt,
     fs::File,
     io::BufReader,
     path::PathBuf,
@@ -7,16 +7,14 @@ use std::{
 };
 
 use super::scan::ScanTrait;
-use crate::logger::{self};
+use crate::logger;
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use xml::reader::XmlEvent;
 
 pub struct NmapScan {
     output_file: PathBuf,
-    pub scan_results: Vec<NmapScanResult>,
     scan_args: Vec<String>,
 }
-
 
 enum PortState {
     Open,
@@ -24,6 +22,7 @@ enum PortState {
     None,
 }
 
+//This might be overkill.
 impl fmt::Display for PortState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -40,19 +39,20 @@ impl fmt::Display for PortState {
     }
 }
 
-struct Port {
-    num: String,
+pub struct Port {
+    pub num: String,
     state: PortState,
 }
 
+//Has to be public because a Vec of this struct is returned.
 pub struct NmapScanResult {
-    port: Port,
+    pub port: Port,
     service_name: String,
     service_version: String,
 }
 
 impl NmapScan {
-    pub fn new(mut output_dir: PathBuf) -> NmapScan {
+    pub fn new(mut output_dir: PathBuf, target: String) -> NmapScan {
         //Create a separate file for the raw output
         let mut output_file_raw = output_dir.clone();
         output_file_raw.push("nmap_raw");
@@ -61,7 +61,6 @@ impl NmapScan {
         output_dir.push("nmap_xml");
         NmapScan {
             output_file: output_dir.clone(), //Clone here because the .to_str()'s below need it as well.
-            scan_results: Vec::new(),
             scan_args: vec![
                 String::from("-sV"),
                 String::from("-sC"),
@@ -69,16 +68,17 @@ impl NmapScan {
                 output_dir.to_str().unwrap().to_string(),
                 String::from("-oN"),
                 output_file_raw.to_str().unwrap().to_string(),
+                target,
             ],
         }
     }
 }
 
 impl ScanTrait for NmapScan {
+    type ScanResult = NmapScanResult;
 
-    fn run(&mut self, target: &str) {
+    fn run(&self) -> Vec<NmapScanResult> {
         logger::print_ok("Running Nmap...");
-        self.scan_args.push(target.to_string());
         logger::print_ok(&format!("Command used: nmap {}", self.scan_args.join(" ")));
         logger::print_warn("Please note that the raw output of this scan will be shown at the end for further inspection.");
 
@@ -90,7 +90,11 @@ impl ScanTrait for NmapScan {
         {
             Ok(mut child) => {
                 if let Ok(_) = child.wait() {
-                }else{
+                    //Nmap ran successfully.
+                    let results = self.parse_output();
+                    self.print_results(&results);
+                    return results;
+                } else {
                     logger::print_err("Error running Nmap");
                 }
             }
@@ -98,15 +102,18 @@ impl ScanTrait for NmapScan {
                 logger::print_err(&err.to_string());
             }
         }
+
+        return Vec::new();
     }
 
-    fn parse_output(&mut self) {
+    fn parse_output(&self) -> Vec<NmapScanResult> {
         //Open the XML file and create a buffered reader for the XML reader.
         let file = File::open(&self.output_file).unwrap();
         let buf_reader = BufReader::new(file);
         let xml_reader = xml::EventReader::new(buf_reader);
 
         //Create an object that will constantly be updated
+        let mut scan_results: Vec<NmapScanResult> = Vec::new();
         let mut scan_result = NmapScanResult {
             port: Port {
                 num: String::from(""),
@@ -163,8 +170,8 @@ impl ScanTrait for NmapScan {
 
                 Ok(XmlEvent::EndElement { name }) => {
                     if name.local_name.eq("port") {
+                        scan_results.push(scan_result);
                         //Reinstantiate the ScanResult object so it can form a new instance.
-                        self.scan_results.push(scan_result);
                         scan_result = NmapScanResult {
                             port: Port {
                                 num: String::from(""),
@@ -182,10 +189,12 @@ impl ScanTrait for NmapScan {
                 _ => {}
             }
         }
+
+        return scan_results;
     }
 
-    fn print_results(&self) {
-        if self.scan_results.len() < 1 {
+    fn print_results(&self, scan_results: &Vec<NmapScanResult>) {
+        if scan_results.len() < 1 {
             logger::print_warn("No open ports found.");
             return;
         }
@@ -196,7 +205,7 @@ impl ScanTrait for NmapScan {
             .apply_modifier(UTF8_ROUND_CORNERS)
             .set_header(vec!["Port", "State", "Service", "Version"]);
 
-        for result in &self.scan_results {
+        for result in scan_results {
             table.add_row(vec![
                 &result.port.num,
                 &result.port.state.to_string(),
@@ -208,7 +217,7 @@ impl ScanTrait for NmapScan {
         println!("{}", table);
     }
 
-    fn triggers_on(&self) {
+    fn triggers_on() {
         todo!()
     }
 }

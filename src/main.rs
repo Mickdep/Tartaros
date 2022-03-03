@@ -1,5 +1,11 @@
 use colored::Colorize;
-use std::{env, io, path::PathBuf, process::exit, fs::{create_dir, remove_dir_all}};
+use std::{
+    env,
+    fs::{create_dir, remove_dir_all},
+    io,
+    path::PathBuf,
+    process::exit,
+};
 use url::{Host, ParseError};
 use which::which;
 mod engine;
@@ -61,7 +67,7 @@ fn nmap_is_installed() -> bool {
 fn create_output_dir() -> Result<PathBuf, io::Error> {
     let path = PathBuf::from(".tartaros_temp");
     //If there was an error when trying to create the directory (due to existence), attempt to remove it and create it again.
-    if let Err(_) = create_dir(&path){
+    if let Err(_) = create_dir(&path) {
         remove_dir_all(&path)?;
         create_dir(&path)?;
     }
