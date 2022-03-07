@@ -1,4 +1,4 @@
-pub trait ScanTrait {
+pub trait Scan {
     //This is awesome lol. This is called an "Associated type" and it functions as a polymorphic type.
     //Each struct that implements this trait must define this type. The scan "NmapScan" can for example define the following:
     //type ScanResult = NmapScanResult;

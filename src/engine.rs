@@ -1,6 +1,6 @@
 use crate::{
     logger,
-    scans::{nmap_scan::NmapScan, scan::ScanTrait},
+    scans::{nmap::NmapScan, scan::Scan},
 };
 use std::path::PathBuf;
 
@@ -17,6 +17,8 @@ pub fn run(target: String, output_dir: PathBuf) {
         println!("");
         logger::print_ok("Triggering other scans now...");
 
+        //Some of the follow-up scans can be run in parallel.
+        //I will add multithreading when most of the basic functionality has been implemented.
         for result in results{
             match result.port.num.as_str() {
                 "80" => logger::print_warn("Running Feroxbuster, Micrawl, Screenshooter"),
@@ -26,10 +28,4 @@ pub fn run(target: String, output_dir: PathBuf) {
             }
         }
     }
-    // nmap_scan.run(&target);
-    // nmap_scan.parse_output();
-    // nmap_scan.print_results();
-    // if nmap_scan.scan_results.is_empty() {
-    //     logger::print_err("Nmap did not run");
-    // }
 }

@@ -1,2 +1,3 @@
-pub mod nmap_scan;
+pub mod nmap;
 pub mod scan;
+pub mod feroxbuster;

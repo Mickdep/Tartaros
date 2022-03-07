@@ -6,7 +6,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use super::scan::ScanTrait;
+use super::scan::Scan;
 use crate::logger;
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use xml::reader::XmlEvent;
@@ -74,7 +74,7 @@ impl NmapScan {
     }
 }
 
-impl ScanTrait for NmapScan {
+impl Scan for NmapScan {
     type ScanResult = NmapScanResult;
 
     fn run(&self) -> Vec<NmapScanResult> {
