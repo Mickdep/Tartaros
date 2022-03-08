@@ -6,7 +6,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-use super::scan::Scan;
+use super::{scan::Scan, error::ScanError};
 use crate::logger;
 use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use xml::reader::XmlEvent;
@@ -77,7 +77,7 @@ impl NmapScan {
 impl Scan for NmapScan {
     type ScanResult = NmapScanResult;
 
-    fn run(&self) -> Vec<NmapScanResult> {
+    fn run(&self) -> Result<Vec<NmapScanResult>, ScanError> {
         logger::print_ok("Running Nmap...");
         logger::print_ok(&format!("Command used: nmap {}", self.scan_args.join(" ")));
         logger::print_warn("Please note that the raw output of this scan will be shown at the end for further inspection.");
@@ -93,17 +93,16 @@ impl Scan for NmapScan {
                     //Nmap ran successfully.
                     let results = self.parse_output();
                     self.print_results(&results);
-                    return results;
+                    return Ok(results);
                 } else {
-                    logger::print_err("Error running Nmap");
+                    return Err(ScanError::Runtime);
                 }
             }
             Err(err) => {
                 logger::print_err(&err.to_string());
+                return Err(ScanError::Runtime);
             }
         }
-
-        return Vec::new();
     }
 
     fn parse_output(&self) -> Vec<NmapScanResult> {
@@ -193,7 +192,7 @@ impl Scan for NmapScan {
         return scan_results;
     }
 
-    fn print_results(&self, scan_results: &Vec<NmapScanResult>) {
+    fn print_results(&self, scan_results: &[NmapScanResult]) {
         if scan_results.len() < 1 {
             logger::print_warn("No open ports found.");
             return;

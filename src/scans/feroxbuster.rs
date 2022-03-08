@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use url::Url;
 
-use super::scan::Scan;
+use crate::logger;
+use which::which;
+use super::{scan::Scan, error::ScanError};
 
 pub struct FeroxbusterScan {
     output_file: PathBuf,
@@ -28,15 +30,21 @@ impl FeroxbusterScan {
 impl Scan for FeroxbusterScan {
     type ScanResult = FeroxbusterScanResult;
 
-    fn run(&self) -> Vec<Self::ScanResult> {
-        todo!()
+    fn run(&self) -> Result<Vec<Self::ScanResult>, ScanError> {
+        if let Err(_) = which("feroxbuster") {
+            logger::print_err("Feroxbuster is not installed. Skipping scan.");
+
+            return Err(ScanError::NotInstalled);
+        }
+
+        return Ok(Vec::new());
     }
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
         todo!()
     }
 
-    fn print_results(&self, scan_results: &Vec<Self::ScanResult>) {
+    fn print_results(&self, scan_results: &[Self::ScanResult]) {
         todo!()
     }
 
