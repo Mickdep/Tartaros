@@ -16,7 +16,7 @@ pub struct NmapScan {
     scan_args: Vec<String>,
 }
 
-enum PortState {
+pub enum PortState {
     Open,
     Filtered,
     None,
@@ -41,7 +41,7 @@ impl fmt::Display for PortState {
 
 pub struct Port {
     pub num: String,
-    state: PortState,
+    pub state: PortState,
 }
 
 //Has to be public because a Vec of this struct is returned.
