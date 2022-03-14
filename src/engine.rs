@@ -1,19 +1,19 @@
 use crate::{
     logger,
-    scans::{error::ScanError, nmap::NmapScan, scan::Scan},
+    scans::{error::ScanError, nmap::{NmapScan, PortState}, scan::Scan},
 };
 use std::{collections::HashMap, path::PathBuf};
 
 pub struct ScanTriggers {
-    pub triggers: HashMap<String, ()>,
+    pub triggers: HashMap<String, fn()>,
 }
 
 impl ScanTriggers {
     pub fn new() -> ScanTriggers {
         ScanTriggers {
             triggers: HashMap::from([
-                (String::from("80"), port80()),
-                (String::from("445"), port445()),
+                (String::from("80"), port80 as fn()),
+                (String::from("445"), port445 as fn()),
             ]),
         }
     }
@@ -43,10 +43,10 @@ pub fn run(target: String, output_dir: PathBuf) {
                 //I will add multithreading when most of the basic functionality has been implemented.
                 results
                     .iter()
-                    // .filter(|x| matches!(x.port.state, PortState::Open))
+                    .filter(|x| matches!(x.port.state, PortState::Open))
                     .for_each(|result| {
                         if scan_triggers.triggers.contains_key(&result.port.num) {
-                            scan_triggers.triggers[&result.port.num]
+                            scan_triggers.triggers[&result.port.num]();
                         }
                     });
                 // for result in results {
