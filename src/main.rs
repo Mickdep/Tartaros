@@ -31,7 +31,7 @@ fn main() {
     //We exit if the target can not be parsed to a valid Host.
     if let Ok(target) = parse_target(&args[1]) {
         if !nmap_is_installed() {
-            //Nmap is required for this program to even run. If it's not installed, exit.
+            //Nmap is required for this program to run. If it's not installed, exit.
             terminate(
                 "Nmap is not installed, but it is required. Install it with: sudo apt install nmap",
             );
