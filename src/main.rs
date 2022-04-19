@@ -45,6 +45,8 @@ fn main() {
                 terminate("Unable to create an output directory for storing results. Please change your working directory or run this program as a high-privileged user.");
             }
         }
+    }else{
+        terminate("Unable to parse target string. Please make sure that you're not using any protocol specifiers (such as 'http://').")
     }
 }
 

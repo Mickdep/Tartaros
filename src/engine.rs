@@ -60,6 +60,7 @@ pub fn run(target: String, output_dir: PathBuf) {
 }
 
 //The functions below will need the target, as well as the output directory (i guess).
+//All the scans below can (mostly) be run in parallel.
 fn port80_triggers(output_dir: PathBuf, target: String) {
     /*TORUN:
     1. Feroxbuster

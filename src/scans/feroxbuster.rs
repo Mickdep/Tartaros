@@ -1,8 +1,9 @@
 use std::{
     path::PathBuf,
-    process::{Command, Stdio},
+    process::{Command, Stdio}, fs::File, io::BufReader,
 };
 
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use super::{error::ScanError, scan::Scan};
@@ -14,24 +15,28 @@ pub struct FeroxbusterScan {
     scan_args: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FeroxbusterScanResult {
-    pub url: Url,
-    pub response_code: String,
-    pub response_size: String,
+    pub result_type: String,
+    pub url: String,
+    pub status: String,
+    pub content_length: String,
 }
 
 impl FeroxbusterScan {
-    pub fn new(mut output_dir: PathBuf, target: String) -> FeroxbusterScan {
+    pub fn new(mut output_dir: PathBuf, mut target: String) -> FeroxbusterScan {
         output_dir.push("feroxbuster");
-        let mut wordlist_dir = std::env::current_dir().unwrap(); //Should be fine to unwrap() here since this function is also used in main.rs. Should've crashed back then already if this function fails.
+        let mut wordlist_dir = std::env::current_exe().unwrap(); //Should be fine to unwrap() here since this function is also used in main.rs. Should've crashed back then already if this function fails.
         wordlist_dir.push("wordlists/feroxbuster-dir.txt");
+        target.insert_str(0, "https://"); //Prepend the https:// protocol specifier.
         FeroxbusterScan {
             output_file: output_dir.clone(),
             scan_args: vec![
                 String::from("-u"),
                 String::from(target),
                 String::from("-w"),
-                wordlist_dir.to_str().unwrap().to_string(),
+                String::from("~/Workspace/Wordlists/common.txt"),
+                // wordlist_dir.to_str().unwrap().to_string(),
                 String::from("-o"),
                 output_dir.to_str().unwrap().to_string(),
                 String::from("--json")
@@ -77,7 +82,13 @@ impl Scan for FeroxbusterScan {
     }
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
-        todo!()
+        let file = File::open(&self.output_file).unwrap();
+        let reader = BufReader::new(file);
+        let test: Vec<FeroxbusterScanResult> = serde_json::from_reader(reader).unwrap();
+        for i in test {
+            println!("Ferox: {}", i.url);
+        }
+        return Vec::new();
     }
 
     fn print_results(&self, scan_results: &[Self::ScanResult]) {
