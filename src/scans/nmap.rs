@@ -79,8 +79,7 @@ impl Scan for NmapScan {
 
     fn run(&self) -> Result<Vec<NmapScanResult>, ScanError> {
         logger::print_ok("Running Nmap...");
-        logger::print_ok(&format!("Command used: nmap {}", self.scan_args.join(" ")));
-        logger::print_warn("Please note that the raw output of this scan will be shown at the end for further inspection.");
+        self.print_command();
 
         match Command::new("nmap")
             .stdout(Stdio::null())
@@ -95,12 +94,12 @@ impl Scan for NmapScan {
                     self.print_results(&results);
                     return Ok(results);
                 } else {
-                    return Err(ScanError::Runtime);
+                    return Err(ScanError::Runtime("nmap".to_string()));
                 }
             }
             Err(err) => {
                 logger::print_err(&err.to_string());
-                return Err(ScanError::Runtime);
+                return Err(ScanError::Runtime("nmap".to_string()));
             }
         }
     }
@@ -121,6 +120,8 @@ impl Scan for NmapScan {
             service_name: String::from(""),
             service_version: String::from(""),
         };
+        //TODO: This parsing logic can possibly be a lot simpler. Another crate could be used for this instead of the default XML reader.
+        //This parsing logic simply loops through ALL elements in the XML tree, and constructs NmapScanResults for entries on the fly.
         for elem in xml_reader {
             match elem {
                 Ok(XmlEvent::StartElement {
@@ -216,7 +217,15 @@ impl Scan for NmapScan {
         println!("{}", table);
     }
 
-    fn triggers_on() {
-        todo!()
+    fn print_command(&self) {
+        logger::print_ok(&format!("Command used: nmap {}", self.scan_args.join(" ")));
+    }
+
+    /// NOT USED.
+    /// This function is just here because it's mandatory to implement according to the trait.
+    /// However, Nmap's installation is already checked in main.rs. If this function is reached, we know Nmap is installed already.
+    /// Thus: always return true here.
+    fn is_installed() -> bool {
+        true
     }
 }

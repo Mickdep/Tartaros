@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub enum ScanError {
-    NotInstalled,
-    Runtime,
+    NotInstalled(String),
+    Runtime(String),
     None
 }

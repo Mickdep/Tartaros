@@ -33,3 +33,7 @@ tartaros <ip_address>
 ## Demo
 
 **In development**
+
+## Configuration
+
+**In development**

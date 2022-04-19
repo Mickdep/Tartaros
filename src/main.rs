@@ -25,7 +25,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     //Not enough args. This will probably be replaced by code to configure the 'Clap' crate.
     if args.len() < 2 {
-        terminate("No target provided. Usage: tartaros <ip|hostname>");
+        terminate("No target provided. Usage: tartaros <ip|hostname> (make sure you DON'T specify a protocol such as http://*)");
     }
 
     //We exit if the target can not be parsed to a valid Host.
@@ -36,13 +36,13 @@ fn main() {
                 "Nmap is not installed, but it is required. Install it with: sudo apt install nmap",
             );
         } else {
-            if let Ok(output_dir) = create_output_dir() {
-                engine::run(target, output_dir.clone());
+            if let Ok(output_dir) = create_output_dir(&target) {
+                engine::run(target, output_dir);
                 // if let Err(_) = remove_dir_all(output_dir){
                 //     terminate("Unable to delete the temporary output directory '.tartaros_temp'. Please try to do so manually.");
                 // }
             } else {
-                terminate("Unable to create an output directory for storing intermediate results. Please change your working directory or run this program as a high-privileged user.");
+                terminate("Unable to create an output directory for storing results. Please change your working directory or run this program as a high-privileged user.");
             }
         }
     }
@@ -63,19 +63,22 @@ fn nmap_is_installed() -> bool {
     false
 }
 
-/// Attempts to create a directory '.tartaros_temp' in the current working directory for storing intermediate results of the separate scans that run.
-fn create_output_dir() -> Result<PathBuf, io::Error> {
-    let path = PathBuf::from(".tartaros_temp");
-    //If there was an error when trying to create the directory (due to existence), attempt to remove it and create it again.
+/// Attempts to create a directory 'tartaros_results_{target}' in the current working directory for storing intermediate results of the separate scans that run.
+fn create_output_dir(target: &str) -> Result<PathBuf, io::Error> {
+    let dir_name = format!("tartaros_results_{}", target);
+
+    let current_dir = std::env::current_dir()?;
+    let path = PathBuf::from(current_dir).join(dir_name);
     if let Err(_) = create_dir(&path) {
         remove_dir_all(&path)?;
         create_dir(&path)?;
     }
 
+    //Should always be a valid path since we return early if creation fails.
     Ok(path)
 }
 
-/// Deletes any remaining files, outputs an error message and terminates the process.
+/// Outputs an error message and terminates the process.
 fn terminate(msg: &str) {
     logger::print_err(&format!("Error: {}", msg));
     exit(1);
