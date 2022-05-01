@@ -1,6 +1,6 @@
 use std::{
     path::PathBuf,
-    process::{Command, Stdio}, fs::File, io::BufReader,
+    process::{Command, Stdio}, fs::{File, self}, io::BufReader,
 };
 
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,11 @@ pub struct FeroxbusterScan {
     output_file: PathBuf,
     scan_args: Vec<String>,
 }
+
+// #[derive(Serialize, Deserialize, Debug)]
+// struct FeroxResults {
+//     pub items: Vec<FeroxbusterScanResult>
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FeroxbusterScanResult {
@@ -35,7 +40,7 @@ impl FeroxbusterScan {
                 String::from("-u"),
                 String::from(target),
                 String::from("-w"),
-                String::from("~/Workspace/Wordlists/common.txt"),
+                String::from("/Users/mick/Workspace/Wordlists/common.txt"),
                 // wordlist_dir.to_str().unwrap().to_string(),
                 String::from("-o"),
                 output_dir.to_str().unwrap().to_string(),
@@ -73,21 +78,32 @@ impl Scan for FeroxbusterScan {
                 } else {
                     return Err(ScanError::Runtime("feroxbuster".to_string()));
                 }
+                // let results = self.parse_output();
+                // return Ok(results);
             }
             Err(err) => {
-                logger::print_err(&err.to_string());
-                return Err(ScanError::Runtime("feroxbuster".to_string()));
+                // logger::print_err(&err.to_string());
+                // return Err(ScanError::Runtime("feroxbuster".to_string()));
+                return Err(ScanError::Runtime("eeek".to_string()));
             }
         }
     }
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
-        let file = File::open(&self.output_file).unwrap();
-        let reader = BufReader::new(file);
-        let test: Vec<FeroxbusterScanResult> = serde_json::from_reader(reader).unwrap();
-        for i in test {
+        println!("Reading from {}", self.output_file.to_str().unwrap());
+        
+        match fs::read_to_string(&self.output_file) {
+            Ok(data) => {
+                let test: Vec<FeroxbusterScanResult> = serde_json::from_str(&data.trim()).unwrap();
+                        for i in test {
             println!("Ferox: {}", i.url);
         }
+            }
+            Err(error) => println!("Error reading file: {}", error),
+        }
+        // let reader = BufReader::new(file);
+        // let test: Vec<FeroxbusterScanResult> = serde_json::from_reader(reader).unwrap();
+
         return Vec::new();
     }
 

@@ -1,7 +1,7 @@
 use colored::Colorize;
 use std::{
     env,
-    fs::{create_dir, remove_dir_all},
+    fs::{create_dir, remove_dir_all, create_dir_all},
     io,
     path::PathBuf,
     process::exit,
@@ -67,13 +67,11 @@ fn nmap_is_installed() -> bool {
 
 /// Attempts to create a directory 'tartaros_results_{target}' in the current working directory for storing intermediate results of the separate scans that run.
 fn create_output_dir(target: &str) -> Result<PathBuf, io::Error> {
-    let dir_name = format!("tartaros_results_{}", target);
-
-    let current_dir = std::env::current_dir()?;
-    let path = PathBuf::from(current_dir).join(dir_name);
-    if let Err(_) = create_dir(&path) {
+    let home_dir = std::env::var("HOME").unwrap(); //Is always set as env variable because it's required by the POSIX spec (https://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html)
+    let path = PathBuf::from(home_dir).join("tartaros").join(target);
+    if let Err(_) = create_dir_all(&path) {
         remove_dir_all(&path)?;
-        create_dir(&path)?;
+        create_dir_all(&path)?;
     }
 
     //Should always be a valid path since we return early if creation fails.
@@ -87,49 +85,6 @@ fn terminate(msg: &str) {
 }
 
 fn print_banner() {
-    // let hand = "
-    //                      ......        ...
-    //                      ...*/...    ...*...
-    //              ......    ...(....   ...(...
-    //             ....(....   ....(...   ../*..
-    //               ....(....   ...(...  ...(...
-    //         ......  ...,(... ...(... ...*(...
-    //        ....(.... ...(,.. ..,(......((...
-    //          .../(....................,(((
-    //            ..**...../////////////(((......
-    //            ...////////(((((((((((((,..(((...
-    //            ...///((((((((((,*(((,,,,...((%...
-    //            ...//(((.........*(.........((%...
-    //            ...//((((((((((((.../(((((((%(....
-    //             ...//((((((((((((((((((((%....
-    //              ......((((((((((((.........
-    //                ...,/////(((((((,.....
-    //                ...////////(((((%%...
-    //           ......../////////((((%%..."
-    //     .green();
-    // println!("{}", &hand);
-    // println!(
-    //     "{}{}{}",
-    //     "              ........".truecolor(205, 133, 63),
-    //     "/////////((((%%".green(),
-    //     ".../,...........".truecolor(205, 133, 63)
-    // );
-    // println!(
-    //     "{}{}{}",
-    //     "       .........*//...".truecolor(205, 133, 63),
-    //     "/////////((((%%".green(),
-    //     "...//............".truecolor(205, 133, 63)
-    // );
-    // println!(
-    //     "{}{}{}",
-    //     "        ......********".truecolor(205, 133, 63),
-    //     "//////////((((%%".green(),
-    //     "...****.....".truecolor(205, 133, 63)
-    // );
-    // println!(
-    //     "{}",
-    //     "            .....................................".truecolor(205, 133, 63)
-    // );
     let text = "
 ▄▄▄█████▓ ▄▄▄       ██▀███  ▄▄▄█████▓ ▄▄▄       ██▀███   ▒█████    ██████
 ▓  ██▒ ▓▒▒████▄    ▓██ ▒ ██▒▓  ██▒ ▓▒▒████▄    ▓██ ▒ ██▒▒██▒  ██▒▒██    ▒
