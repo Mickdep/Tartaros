@@ -105,6 +105,7 @@ impl Scan for NmapScan {
     }
 
     fn parse_output(&self) -> Vec<NmapScanResult> {
+        println!("Now parsing nmap output");
         //Open the XML file and create a buffered reader for the XML reader.
         let file = File::open(&self.output_file).unwrap();
         let buf_reader = BufReader::new(file);

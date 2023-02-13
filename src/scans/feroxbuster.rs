@@ -1,6 +1,8 @@
 use std::{
+    fs::{self, File},
+    io::BufReader,
     path::PathBuf,
-    process::{Command, Stdio}, fs::{File, self}, io::BufReader,
+    process::{Command, Stdio},
 };
 
 use serde::{Deserialize, Serialize};
@@ -44,7 +46,7 @@ impl FeroxbusterScan {
                 // wordlist_dir.to_str().unwrap().to_string(),
                 String::from("-o"),
                 output_dir.to_str().unwrap().to_string(),
-                String::from("--json")
+                String::from("--json"),
             ],
         }
     }
@@ -91,13 +93,13 @@ impl Scan for FeroxbusterScan {
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
         println!("Reading from {}", self.output_file.to_str().unwrap());
-        
+
         match fs::read_to_string(&self.output_file) {
             Ok(data) => {
                 let test: Vec<FeroxbusterScanResult> = serde_json::from_str(&data.trim()).unwrap();
-                        for i in test {
-            println!("Ferox: {}", i.url);
-        }
+                for i in test {
+                    println!("Ferox: {}", i.url);
+                }
             }
             Err(error) => println!("Error reading file: {}", error),
         }
@@ -120,8 +122,8 @@ impl Scan for FeroxbusterScan {
 
     fn is_installed() -> bool {
         //Can probably be done more elegantly, but this is at least readable.
-        if let Ok(_) = which("feroxbuster"){
-            return true
+        if let Ok(_) = which("feroxbuster") {
+            return true;
         }
         false
     }
