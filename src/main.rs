@@ -1,7 +1,7 @@
 use colored::Colorize;
 use std::{
     env,
-    fs::{create_dir, remove_dir_all, create_dir_all},
+    fs::{create_dir, create_dir_all, remove_dir_all},
     io,
     path::PathBuf,
     process::exit,
@@ -45,7 +45,7 @@ fn main() {
                 terminate("Unable to create an output directory for storing results. Please change your working directory or run this program as a high-privileged user.");
             }
         }
-    }else{
+    } else {
         terminate("Unable to parse target string. Please make sure that you're not using any protocol specifiers (such as 'http://').")
     }
 }
@@ -85,6 +85,49 @@ fn terminate(msg: &str) {
 }
 
 fn print_banner() {
+    let hand = "                                                                                                  
+                         ......        ...                  
+                         ...*/...    ...*...                
+                 ......    ...(....   ...(...               
+                ....(....   ....(...   ../*..               
+                  ....(....   ...(...  ...(...              
+            ......  ...,(... ...(... ...*(...               
+           ....(.... ...(,.. ..,(......((...                
+             .../(....................,(((                  
+               ..**...../////////////(((......              
+               ...////////(((((((((((((,..(((...            
+               ...///((((((((((,*(((,,,,...((%...           
+               ...//(((.........*(.........((%...           
+               ...//((((((((((((.../(((((((%(....           
+                ...//((((((((((((((((((((%....              
+                 ......((((((((((((.........                
+                   ...,/////(((((((,.....                   
+                   ...////////(((((%%...                    
+              ......../////////((((%%...".bright_green();
+    println!("{}", &hand);
+    println!(
+        "{}{}{}",
+        "              ........".truecolor(205, 133, 63),
+        "/////////((((%%".green(),
+        ".../,...........".truecolor(205, 133, 63)
+    );
+    println!(
+        "{}{}{}",
+        "       .........*//...".truecolor(205, 133, 63),
+        "/////////((((%%".green(),
+        "...//............".truecolor(205, 133, 63)
+    );
+    println!(
+        "{}{}{}",
+        "        ......********".truecolor(205, 133, 63),
+        "//////////((((%%".green(),
+        "...****.....".truecolor(205, 133, 63)
+    );
+    println!(
+        "{}",
+        "            .....................................".truecolor(205, 133, 63)
+    );
+
     let text = "
 ▄▄▄█████▓ ▄▄▄       ██▀███  ▄▄▄█████▓ ▄▄▄       ██▀███   ▒█████    ██████
 ▓  ██▒ ▓▒▒████▄    ▓██ ▒ ██▒▓  ██▒ ▓▒▒████▄    ▓██ ▒ ██▒▒██▒  ██▒▒██    ▒

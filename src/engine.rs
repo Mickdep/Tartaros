@@ -4,7 +4,7 @@ use crate::{
         error::ScanError,
         feroxbuster::FeroxbusterScan,
         nmap::{self, NmapScan, PortState},
-        scan::Scan,
+        scan::Scan, nuclei::NucleiScan,
     },
 };
 use std::{collections::HashMap, path::PathBuf};
@@ -72,11 +72,18 @@ fn port80_triggers(output_dir: PathBuf, target: String) {
     8. CVE scan (could used Nmap scripts here)
     */
 
-    let feroxbuster_scan = FeroxbusterScan::new(output_dir, target);
-    if let Ok(res) = feroxbuster_scan.run() {
-        println!("Worked");
+    // let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
+    // if let Ok(res) = feroxbuster_scan.run() {
+    //     println!("Worked");
+    // }else{
+    //     println!("Did not work");
+    // }
+    
+    let nuclei_scan = NucleiScan::new(output_dir, target);
+    if let Ok(res) = nuclei_scan.run() {
+        println!("Worked as well");
     }else{
-        println!("Did not work");
+        println!("Did not work.");
     }
 }
 
