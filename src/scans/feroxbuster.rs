@@ -18,11 +18,6 @@ pub struct FeroxbusterScan {
     scan_args: Vec<String>,
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
-// struct FeroxResults {
-//     pub items: Vec<FeroxbusterScanResult>
-// }
-
 #[derive(Deserialize, Debug)]
 pub struct FeroxbusterScanResult {
     pub url: String,
@@ -80,13 +75,10 @@ impl Scan for FeroxbusterScan {
                 } else {
                     return Err(ScanError::Runtime("feroxbuster".to_string()));
                 }
-                // let results = self.parse_output();
-                // return Ok(results);
             }
             Err(err) => {
-                // logger::print_err(&err.to_string());
-                // return Err(ScanError::Runtime("feroxbuster".to_string()));
-                return Err(ScanError::Runtime("eeek".to_string()));
+                logger::print_err(&err.to_string());
+                return Err(ScanError::Runtime("feroxbuster".to_string()));
             }
         }
     }
