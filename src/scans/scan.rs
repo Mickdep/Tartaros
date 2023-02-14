@@ -22,5 +22,5 @@ pub trait Scan {
 
     fn print_results(&self, scan_results: &[Self::ScanResult]);
     fn print_command(&self);
-    fn is_installed() -> bool;
+    fn is_installed(&self) -> bool;
 }

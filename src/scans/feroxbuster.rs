@@ -17,11 +17,6 @@ pub struct FeroxbusterScan {
     scan_args: Vec<String>,
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
-// struct FeroxResults {
-//     pub items: Vec<FeroxbusterScanResult>
-// }
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FeroxbusterScanResult {
     pub result_type: String,
@@ -47,7 +42,7 @@ impl FeroxbusterScan {
                 String::from("-o"),
                 output_dir.to_str().unwrap().to_string(),
                 String::from("--json"),
-            ],
+            ]
         }
     }
 }
@@ -56,12 +51,10 @@ impl Scan for FeroxbusterScan {
     type ScanResult = FeroxbusterScanResult;
 
     fn run(&self) -> Result<Vec<Self::ScanResult>, ScanError> {
-        if let Err(_) = which("feroxbuster") {
+        if !self.is_installed(){
             logger::print_err("Feroxbuster is not installed. Skipping scan.");
-            // let test = std::env::current_dir().unwrap();
             return Err(ScanError::NotInstalled("feroxbuster".to_string()));
         }
-
         logger::print_ok("Running Feroxbuster...");
         self.print_command();
 
@@ -92,8 +85,6 @@ impl Scan for FeroxbusterScan {
     }
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
-        println!("Reading from {}", self.output_file.to_str().unwrap());
-
         match fs::read_to_string(&self.output_file) {
             Ok(data) => {
                 let test: Vec<FeroxbusterScanResult> = serde_json::from_str(&data.trim()).unwrap();
@@ -120,9 +111,8 @@ impl Scan for FeroxbusterScan {
         ));
     }
 
-    fn is_installed() -> bool {
-        //Can probably be done more elegantly, but this is at least readable.
-        if let Ok(_) = which("feroxbuster") {
+    fn is_installed(&self) -> bool {
+        if let Ok(_) = which("feroxbuster"){
             return true;
         }
         false

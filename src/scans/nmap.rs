@@ -226,7 +226,7 @@ impl Scan for NmapScan {
     /// This function is just here because it's mandatory to implement according to the trait.
     /// However, Nmap's installation is already checked in main.rs. If this function is reached, we know Nmap is installed already.
     /// Thus: always return true here.
-    fn is_installed() -> bool {
+    fn is_installed(&self) -> bool {
         true
     }
 }
