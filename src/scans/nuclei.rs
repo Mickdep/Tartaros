@@ -153,6 +153,7 @@ impl Scan for NucleiScan {
             } else if result.info.severity == "critical" {
                 severity_color = Color::AnsiValue(196);
             }
+            //c
             table.add_row(vec![
                 cell.fg(severity_color),
                 Cell::from(&template_id_string),
