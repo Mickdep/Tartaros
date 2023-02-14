@@ -1,10 +1,11 @@
 use std::{
     fs::{self, File},
-    io::BufReader,
+    io::{BufRead, BufReader},
     path::PathBuf,
     process::{Command, Stdio},
 };
 
+use comfy_table::{modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Table};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -17,17 +18,11 @@ pub struct FeroxbusterScan {
     scan_args: Vec<String>,
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
-// struct FeroxResults {
-//     pub items: Vec<FeroxbusterScanResult>
-// }
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct FeroxbusterScanResult {
-    pub result_type: String,
     pub url: String,
-    pub status: String,
-    pub content_length: String,
+    pub status: u32,
+    pub word_count: u32,
 }
 
 impl FeroxbusterScan {
@@ -80,37 +75,54 @@ impl Scan for FeroxbusterScan {
                 } else {
                     return Err(ScanError::Runtime("feroxbuster".to_string()));
                 }
-                // let results = self.parse_output();
-                // return Ok(results);
             }
             Err(err) => {
-                // logger::print_err(&err.to_string());
-                // return Err(ScanError::Runtime("feroxbuster".to_string()));
-                return Err(ScanError::Runtime("eeek".to_string()));
+                logger::print_err(&err.to_string());
+                return Err(ScanError::Runtime("feroxbuster".to_string()));
             }
         }
     }
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
-        println!("Reading from {}", self.output_file.to_str().unwrap());
-
-        match fs::read_to_string(&self.output_file) {
-            Ok(data) => {
-                let test: Vec<FeroxbusterScanResult> = serde_json::from_str(&data.trim()).unwrap();
-                for i in test {
-                    println!("Ferox: {}", i.url);
+        let mut results: Vec<FeroxbusterScanResult> = Vec::new();
+        if let Ok(file_handle) = File::open(&self.output_file) {
+            let reader = BufReader::new(file_handle);
+            for line in reader.lines() {
+                if let Ok(line_read) = line {
+                    let json_result = serde_json::from_str(&line_read);
+                    if let Ok(feroxbuster_scan_result) = json_result {
+                        results.push(feroxbuster_scan_result);
+                    }
                 }
             }
-            Err(error) => println!("Error reading file: {}", error),
+        } else {
+            logger::print_err("Something went wrong when reading the feroxbuster output.");
         }
-        // let reader = BufReader::new(file);
-        // let test: Vec<FeroxbusterScanResult> = serde_json::from_reader(reader).unwrap();
 
-        return Vec::new();
+        return results;
     }
 
     fn print_results(&self, scan_results: &[Self::ScanResult]) {
-        todo!()
+        if scan_results.len() < 1 {
+            logger::print_warn("Feroxbuster found nothing.");
+            return;
+        }
+        let mut table = Table::new();
+
+        table
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS)
+            .set_header(vec!["Status", "URL", "Word count"]);
+
+        for result in scan_results {
+            table.add_row(vec![
+                &result.status.to_string(),
+                &result.url,
+                &result.word_count.to_string(),
+            ]);
+        }
+
+        println!("{}", table);
     }
 
     fn print_command(&self) {
