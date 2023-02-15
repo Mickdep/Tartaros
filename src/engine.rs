@@ -19,6 +19,7 @@ impl ScanTriggers {
         ScanTriggers {
             triggers: HashMap::from([
                 (String::from("80"), port80_triggers as fn(PathBuf, String)),
+                (String::from("443"), port443_triggers as fn(PathBuf, String)),
                 (String::from("445"), port445_triggers as fn(PathBuf, String)),
             ]),
         }
@@ -62,29 +63,28 @@ pub fn run(target: String, output_dir: PathBuf) {
 //The functions below will need the target, as well as the output directory (i guess).
 //All the scans below can (mostly) be run in parallel.
 fn port80_triggers(output_dir: PathBuf, target: String) {
-    /*TORUN:
-    1. Feroxbuster
-    2. Micrawl (compare this with feroxbuster and deduplicate the results)
-    3. Check the results of the previous two scans. If 'wp-admin' is present (or anything indicating wordpress), run WPScan.
-    4. [OPTIONAL] Check the results of the previous two scans. If there are url's that ferobuster found that Micrawl did NOT find, take screenshots with chrome headless.
-    5. Nuclei (?)
-    7. Something like crt.sh or sublister (although this might not be specific to port 80)
-    8. CVE scan (could used Nmap scripts here)
-    9. SSL scan (use Nmap scripts)
-    */
-
-    // let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
-    // if let Ok(res) = feroxbuster_scan.run() {
-    //     println!("Worked");
-    // }else{
-    //     println!("Did not work");
-    // }
+    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
+    if let Err(err) = feroxbuster_scan.run() {
+        handle_scan_error(err);
+    }
     
     let nuclei_scan = NucleiScan::new(output_dir, target);
-    if let Ok(res) = nuclei_scan.run() {
-        println!("Worked as well");
-    }else{
-        println!("Did not work.");
+    if let Err(err) = nuclei_scan.run() {
+        handle_scan_error(err)
+    }
+}
+
+//This function performs the same actions as the port 80 scan, on another port.
+//Also I can take additional actions here such as an SSL scan to discover weak ciphers etc.
+fn port443_triggers(output_dir: PathBuf, mut target: String) {
+    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
+    if let Err(err) = feroxbuster_scan.run() {
+        handle_scan_error(err);
+    }
+    
+    let nuclei_scan = NucleiScan::new(output_dir, target);
+    if let Err(err) = nuclei_scan.run() {
+        handle_scan_error(err)
     }
 }
 

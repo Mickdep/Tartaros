@@ -5,7 +5,8 @@ A reconaissance automation tool written in Rust.
 </h2>
 
 <p align="center">
-  <img width="256" height="256" src="img/icon256.png">
+  <img width="256" height="256" src="img/icon256.png"><br/>
+  <img width="auto" height="auto" src="img/tartaros_banner.png">
 </p>
 
 
