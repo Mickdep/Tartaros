@@ -1,5 +1,5 @@
 <h1 align="center">
-Reconnaissance tool written in Rust.
+Reconaissance automation
 </h1>
 
 <p align="center">
@@ -12,7 +12,7 @@ Reconnaissance tool written in Rust.
 
 ### Install Rust (if needed)
 ```bash
-curl https://sh.rustup.rs -sSf | sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 ### Install Tartaros
 ```bash
@@ -25,7 +25,7 @@ cargo build --release
 ## Usage
 
 ```
-tartaros <ip_address>
+tartaros <ip_address>|<hostname>
 ```
 
 
