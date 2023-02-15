@@ -27,7 +27,7 @@ cargo build --release
 ## Usage
 
 ```
-tartaros <ip_address>
+tartaros <ip_address>|<hostname>
 ```
 
 
