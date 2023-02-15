@@ -1,8 +1,6 @@
-# Tartaros
-
-<h2 align="center">
-A reconaissance automation tool written in Rust.
-</h2>
+<h1 align="center">
+Reconnaissance tool written in Rust.
+</h1>
 
 <p align="center">
   <img width="256" height="256" src="img/icon256.png"><br/>
