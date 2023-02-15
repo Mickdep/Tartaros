@@ -2,7 +2,7 @@
   Tartaros
 </h1>
 <h2 align="center">
-Reconaissance automation.
+Reconaissance automation
 </h2>
 
 <p align="center">
