@@ -1,5 +1,6 @@
-# Tartaros
-
+<h1 align="center"> 
+  Tartaros
+</h1>
 <h2 align="center">
 A reconaissance automation tool written in Rust.
 </h2>
