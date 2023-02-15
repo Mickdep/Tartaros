@@ -70,6 +70,7 @@ fn port80_triggers(output_dir: PathBuf, target: String) {
     5. Nuclei (?)
     7. Something like crt.sh or sublister (although this might not be specific to port 80)
     8. CVE scan (could used Nmap scripts here)
+    9. SSL scan (use Nmap scripts)
     */
 
     // let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
