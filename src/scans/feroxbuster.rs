@@ -115,15 +115,13 @@ impl Scan for FeroxbusterScan {
         table
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS)
-            .set_header(vec!["Status", "URL", "Word count"]);
+            .set_header(vec!["Status", "URL", "Port", "Word count"]);
 
         for result in scan_results {
-            let mut url = result.url.clone();
-            url.push(':');
-            url.push_str(&self.port.to_string());
             table.add_row(vec![
                 &result.status.to_string(),
-                &url,
+                &result.url,
+                &self.port.to_string(),
                 &result.word_count.to_string(),
             ]);
         }
