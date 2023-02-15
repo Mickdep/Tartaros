@@ -2,7 +2,7 @@
   Tartaros
 </h1>
 <h2 align="center">
-A reconaissance automation tool written in Rust.
+Reconaissance automation.
 </h2>
 
 <p align="center">
