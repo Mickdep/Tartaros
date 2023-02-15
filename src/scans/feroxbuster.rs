@@ -16,6 +16,7 @@ use which::which;
 pub struct FeroxbusterScan {
     output_file: PathBuf,
     scan_args: Vec<String>,
+    port: u16
 }
 
 #[derive(Deserialize, Debug)]
@@ -26,11 +27,11 @@ pub struct FeroxbusterScanResult {
 }
 
 impl FeroxbusterScan {
-    pub fn new(mut output_dir: PathBuf, mut target: String) -> FeroxbusterScan {
+    pub fn new(mut output_dir: PathBuf, mut target: String, port: u16) -> FeroxbusterScan {
         output_dir.push("feroxbuster");
-        let mut wordlist_dir = std::env::current_exe().unwrap(); //Should be fine to unwrap() here since this function is also used in main.rs. Should've crashed back then already if this function fails.
-        wordlist_dir.push("wordlists/feroxbuster-dir.txt");
         target.insert_str(0, "https://"); //Prepend the https:// protocol specifier.
+        target.push_str(":");
+        target.push_str(&port.to_string());
         FeroxbusterScan {
             output_file: output_dir.clone(),
             scan_args: vec![
@@ -38,11 +39,11 @@ impl FeroxbusterScan {
                 String::from(target),
                 String::from("-w"),
                 String::from("/Users/mick/Workspace/Wordlists/common.txt"),
-                // wordlist_dir.to_str().unwrap().to_string(),
                 String::from("-o"),
                 output_dir.to_str().unwrap().to_string(),
                 String::from("--json"),
-            ]
+            ],
+            port
         }
     }
 }
@@ -113,9 +114,11 @@ impl Scan for FeroxbusterScan {
             .set_header(vec!["Status", "URL", "Word count"]);
 
         for result in scan_results {
+            let mut url = result.url.clone();
+            url.push_str(&self.port.to_string());
             table.add_row(vec![
                 &result.status.to_string(),
-                &result.url,
+                &url,
                 &result.word_count.to_string(),
             ]);
         }

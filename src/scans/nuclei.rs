@@ -121,10 +121,11 @@ impl Scan for NucleiScan {
         table
             .load_preset(UTF8_FULL)
             .apply_modifier(UTF8_ROUND_CORNERS)
+            .set_content_arrangement(ContentArrangement::DynamicFullWidth)
             .set_header(vec![
                 "Severity",
-                "Template Id",
                 "Template type",
+                "Template Id",
                 "Location",
                 "Value",
             ]);
@@ -156,8 +157,8 @@ impl Scan for NucleiScan {
             //c
             table.add_row(vec![
                 cell.fg(severity_color),
-                Cell::from(&template_id_string),
                 Cell::from(&result.template_type),
+                Cell::from(&template_id_string),
                 Cell::from(&result.location),
                 Cell::from(&finding_value_string),
             ]);
