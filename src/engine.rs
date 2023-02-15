@@ -31,33 +31,32 @@ pub fn run(target: String, output_dir: PathBuf) {
     logger::print_ok(&format!("Scanning {}", target));
     logger::print_ok("NOTE: Most scans (if they offer the option) will output their raw results to a file in the output directory.\n\n");
     let scan_triggers = ScanTriggers::new();
-    always_triggers(output_dir.clone(), target.clone());
-    // let nmap_scan = NmapScan::new(output_dir.clone(), target.clone());
-    // match nmap_scan.run() {
-    //     //This error handling is very much experimental at this point. Should be worked out and be more elaborate in the future.
-    //     Err(err) => handle_scan_error(err),
-    //     Ok(results) => {
-    //         if results.len() < 1 {
-    //             //TODO: Add option to enable -Pn option for Nmap to assume that the host is up. Maybe even enable this by default...
-    //             logger::print_warn("NOTE: Nmap did not find any open ports. This is weird and should be investigated manually if you expect the host to be up. Terminating.");
-    //         } else {
-    //             println!("");
-    //             //Nmap scan was successful and found open ports. Now run the "always trigger" scans.
-    //             always_triggers(output_dir.clone(), target.clone());
-    //             results
-    //                 .iter()
-    //                 .filter(|x| matches!(x.port.state, PortState::Open)) // Make sure that the port is actually open
-    //                 .for_each(|result| {
-    //                     if scan_triggers.triggers.contains_key(&result.port.num) {
-    //                         scan_triggers.triggers[&result.port.num](
-    //                             output_dir.clone(),
-    //                             target.clone(),
-    //                         ); //Trigger the other scan based on the port number
-    //                     }
-    //                 });
-    //         }
-    //     }
-    // }
+    let nmap_scan = NmapScan::new(output_dir.clone(), target.clone());
+    match nmap_scan.run() {
+        //This error handling is very much experimental at this point. Should be worked out and be more elaborate in the future.
+        Err(err) => handle_scan_error(err),
+        Ok(results) => {
+            if results.len() < 1 {
+                //TODO: Add option to enable -Pn option for Nmap to assume that the host is up. Maybe even enable this by default...
+                logger::print_warn("NOTE: Nmap did not find any open ports. This is weird and should be investigated manually if you expect the host to be up. Terminating.");
+            } else {
+                println!("");
+                //Nmap scan was successful and found open ports. Now run the "always trigger" scans.
+                always_triggers(output_dir.clone(), target.clone());
+                results
+                    .iter()
+                    .filter(|x| matches!(x.port.state, PortState::Open)) // Make sure that the port is actually open
+                    .for_each(|result| {
+                        if scan_triggers.triggers.contains_key(&result.port.num) {
+                            scan_triggers.triggers[&result.port.num](
+                                output_dir.clone(),
+                                target.clone(),
+                            ); //Trigger the other scan based on the port number
+                        }
+                    });
+            }
+        }
+    }
 }
 
 //Scans that are always triggered, regardless of port.

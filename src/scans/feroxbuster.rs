@@ -29,18 +29,22 @@ pub struct FeroxbusterScanResult {
 impl FeroxbusterScan {
     pub fn new(mut output_dir: PathBuf, mut target: String, port: u16) -> FeroxbusterScan {
         output_dir.push("feroxbuster");
+        let mut pathbuf_string = output_dir.to_str().unwrap().to_string();
+        pathbuf_string.push_str(&port.to_string());
+
         target.insert_str(0, "https://"); //Prepend the https:// protocol specifier.
         target.push_str(":");
         target.push_str(&port.to_string());
+
         FeroxbusterScan {
-            output_file: output_dir.clone(),
+            output_file: PathBuf::from(&pathbuf_string),
             scan_args: vec![
                 String::from("-u"),
                 String::from(target),
                 String::from("-w"),
                 String::from("/Users/mick/Workspace/Wordlists/common.txt"),
                 String::from("-o"),
-                output_dir.to_str().unwrap().to_string(),
+                pathbuf_string,
                 String::from("--json"),
             ],
             port
@@ -59,27 +63,27 @@ impl Scan for FeroxbusterScan {
         logger::print_ok("Running Feroxbuster...");
         self.print_command();
 
-        match Command::new("feroxbuster")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .args(&self.scan_args)
-            .spawn()
-        {
-            Ok(mut child) => {
-                if let Ok(_) = child.wait() {
+        // match Command::new("feroxbuster")
+        //     .stdout(Stdio::null())
+        //     .stderr(Stdio::null())
+        //     .args(&self.scan_args)
+        //     .spawn()
+        // {
+        //     Ok(mut child) => {
+        //         if let Ok(_) = child.wait() {
                     //Feroxbuster ran successfully.
                     let results = self.parse_output();
                     self.print_results(&results);
                     return Ok(results);
-                } else {
-                    return Err(ScanError::Runtime("feroxbuster".to_string()));
-                }
-            }
-            Err(err) => {
-                logger::print_err(&err.to_string());
-                return Err(ScanError::Runtime("feroxbuster".to_string()));
-            }
-        }
+        //         } else {
+        //             return Err(ScanError::Runtime("feroxbuster".to_string()));
+        //         }
+        //     }
+        //     Err(err) => {
+        //         logger::print_err(&err.to_string());
+        //         return Err(ScanError::Runtime("feroxbuster".to_string()));
+        //     }
+        // }
     }
 
     fn parse_output(&self) -> Vec<Self::ScanResult> {
@@ -115,6 +119,7 @@ impl Scan for FeroxbusterScan {
 
         for result in scan_results {
             let mut url = result.url.clone();
+            url.push(':');
             url.push_str(&self.port.to_string());
             table.add_row(vec![
                 &result.status.to_string(),
