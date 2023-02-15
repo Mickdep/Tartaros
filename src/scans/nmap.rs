@@ -81,27 +81,27 @@ impl Scan for NmapScan {
         logger::print_ok("Running Nmap...");
         self.print_command();
 
-        match Command::new("nmap")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .args(&self.scan_args)
-            .spawn()
-        {
-            Ok(mut child) => {
-                if let Ok(_) = child.wait() {
+        // match Command::new("nmap")
+        //     .stdout(Stdio::null())
+        //     .stderr(Stdio::null())
+        //     .args(&self.scan_args)
+        //     .spawn()
+        // {
+        //     Ok(mut child) => {
+        //         if let Ok(_) = child.wait() {
                     //Nmap ran successfully.
                     let results = self.parse_output();
                     self.print_results(&results);
                     return Ok(results);
-                } else {
-                    return Err(ScanError::Runtime("nmap".to_string()));
-                }
-            }
-            Err(err) => {
-                logger::print_err(&err.to_string());
-                return Err(ScanError::Runtime("nmap".to_string()));
-            }
-        }
+            //     } else {
+            //         return Err(ScanError::Runtime("nmap".to_string()));
+            //     }
+            // }
+            // Err(err) => {
+            //     logger::print_err(&err.to_string());
+            //     return Err(ScanError::Runtime("nmap".to_string()));
+            // }
+        // }
     }
 
     fn parse_output(&self) -> Vec<NmapScanResult> {

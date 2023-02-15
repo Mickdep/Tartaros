@@ -4,7 +4,8 @@ use crate::{
         error::ScanError,
         feroxbuster::FeroxbusterScan,
         nmap::{self, NmapScan, PortState},
-        scan::Scan, nuclei::NucleiScan,
+        nuclei::NucleiScan,
+        scan::Scan,
     },
 };
 use std::{collections::HashMap, path::PathBuf};
@@ -30,66 +31,77 @@ pub fn run(target: String, output_dir: PathBuf) {
     logger::print_ok(&format!("Scanning {}", target));
     logger::print_ok("NOTE: Most scans (if they offer the option) will output their raw results to a file in the output directory.\n\n");
     let scan_triggers = ScanTriggers::new();
-    port80_triggers(output_dir, target);
-    // let nmap_scan = NmapScan::new(output_dir.clone(), target.clone());
-    // match nmap_scan.run() {
-    //     //This error handling is very much experimental at this point. Should be worked out and be more elaborate in the future.
-    //     Err(err) => handle_scan_error(err),
-    //     Ok(results) => {
-    //         if results.len() < 1 {
-    //             //TODO: Add option to enable -Pn option for Nmap to assume that the host is up. Maybe even enable this by default...
-    //             logger::print_warn("NOTE: Nmap did not find any open ports. This is weird and should be investigated manually if you expect the host to be up. Terminating.");
-    //         } else {
-    //             println!("");
-
-    //             //Some of the follow-up scans can be run in parallel.
-    //             //I will add multithreading when most of the basic functionality has been implemented.
-    //             results
-    //                 .iter()
-    //                 .filter(|x| matches!(x.port.state, PortState::Open)) // Make sure that the port is actually open
-    //                 .for_each(|result| {
-    //                     if scan_triggers.triggers.contains_key(&result.port.num) {
-    //                         scan_triggers.triggers[&result.port.num](
-    //                             output_dir.clone(),
-    //                             target.clone(),
-    //                         ); //Trigger the other scan based on the port number
-    //                     }
-    //                 });
-    //         }
-    //     }
-    // }
+    let nmap_scan = NmapScan::new(output_dir.clone(), target.clone());
+    match nmap_scan.run() {
+        //This error handling is very much experimental at this point. Should be worked out and be more elaborate in the future.
+        Err(err) => handle_scan_error(err),
+        Ok(results) => {
+            if results.len() < 1 {
+                //TODO: Add option to enable -Pn option for Nmap to assume that the host is up. Maybe even enable this by default...
+                logger::print_warn("NOTE: Nmap did not find any open ports. This is weird and should be investigated manually if you expect the host to be up. Terminating.");
+            } else {
+                println!("");
+                //Nmap scan was successful and found open ports. Now run the "always trigger" scans.
+                always_triggers(output_dir.clone(), target.clone());
+                results
+                    .iter()
+                    .filter(|x| matches!(x.port.state, PortState::Open)) // Make sure that the port is actually open
+                    .for_each(|result| {
+                        if scan_triggers.triggers.contains_key(&result.port.num) {
+                            scan_triggers.triggers[&result.port.num](
+                                output_dir.clone(),
+                                target.clone(),
+                            ); //Trigger the other scan based on the port number
+                        }
+                    });
+            }
+        }
+    }
 }
 
-//The functions below will need the target, as well as the output directory (i guess).
-//All the scans below can (mostly) be run in parallel.
+//Scans that are always triggered, regardless of port.
+fn always_triggers(output_dir: PathBuf, target: String) {
+
+    //NUCLEI
+    //After this scan I want to automatically report all the missing HTTP headers.
+    //I can loop through the result, check whether the missing header should be reported, and if so:
+    //Copy the curl command, perform it, save the output, and mark the command.
+    let nuclei_scan = NucleiScan::new(output_dir, target);
+    if let Err(err) = nuclei_scan.run() {
+        handle_scan_error(err)
+    }
+
+    //CVE scan
+    //nmap -sC --script cve*
+}
 fn port80_triggers(output_dir: PathBuf, target: String) {
-    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
+
+    //FEROXBUSTER
+    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone(), 80);
     if let Err(err) = feroxbuster_scan.run() {
         handle_scan_error(err);
-    }
-    
-    let nuclei_scan = NucleiScan::new(output_dir, target);
-    if let Err(err) = nuclei_scan.run() {
-        handle_scan_error(err)
     }
 }
 
-//This function performs the same actions as the port 80 scan, on another port.
-//Also I can take additional actions here such as an SSL scan to discover weak ciphers etc.
-fn port443_triggers(output_dir: PathBuf, mut target: String) {
-    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone());
+fn port443_triggers(output_dir: PathBuf, target: String) {
+    //Only perform an initial feroxbuster scan, since this can really differ per port.
+    //FEROXBUSTER
+    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone(), 443);
     if let Err(err) = feroxbuster_scan.run() {
         handle_scan_error(err);
     }
-    
-    let nuclei_scan = NucleiScan::new(output_dir, target);
-    if let Err(err) = nuclei_scan.run() {
-        handle_scan_error(err)
-    }
+
+    //NMAP SSL SCAN
+    //This scan will perform an SSL scan of the target and automatically report the following findings:
+    // - Weak ciphers
+    // - TLS 1.0 and/or TLS 1.1
+    // - Self-signed/untrusted certificate
+    // I also want to do this for port 3389
 }
 
 //Tbh could use a lot of Nmap's scripting capabilities here already.
 fn port445_triggers(output_dir: PathBuf, target: String) {
+    //Run Nmap scan nmap -sC --scrip smb*
     logger::print_warn("Running smbclient, smb nmap scan, etc.");
 }
 
