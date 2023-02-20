@@ -61,7 +61,6 @@ pub fn run(target: String, output_dir: PathBuf) {
 
 //Scans that are always triggered, regardless of port.
 fn always_triggers(output_dir: PathBuf, target: String) {
-
     //NUCLEI
     //After this scan I want to automatically report all the missing HTTP headers.
     //I can loop through the result, check whether the missing header should be reported, and if so:
@@ -74,22 +73,45 @@ fn always_triggers(output_dir: PathBuf, target: String) {
     //CVE scan
     //nmap -sC --script cve*
 }
-fn port80_triggers(output_dir: PathBuf, target: String) {
-
+fn port80_triggers(output_dir: PathBuf, mut target: String) {
     //FEROXBUSTER
-    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone(), 80);
-    if let Err(err) = feroxbuster_scan.run() {
-        handle_scan_error(err);
+    {
+        let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), &target, 80);
+        if let Err(err) = feroxbuster_scan.run() {
+            handle_scan_error(err);
+        }
+    }
+
+    //NUCLEI
+    {
+        target.insert_str(0, "http://"); //Prepend the https:// protocol specifier.
+        let nuclei_scan = NucleiScan::new(output_dir, target);
+        if let Err(err) = nuclei_scan.run() {
+            handle_scan_error(err)
+        }
     }
 }
 
-fn port443_triggers(output_dir: PathBuf, target: String) {
-    //Only perform an initial feroxbuster scan, since this can really differ per port.
+fn port443_triggers(output_dir: PathBuf, mut target: String) {
     //FEROXBUSTER
-    let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), target.clone(), 443);
-    if let Err(err) = feroxbuster_scan.run() {
-        handle_scan_error(err);
+    {
+        target.insert_str(0, "https://"); //Prepend the https:// protocol specifier.
+        let feroxbuster_scan = FeroxbusterScan::new(output_dir.clone(), &target, 443);
+        if let Err(err) = feroxbuster_scan.run() {
+            handle_scan_error(err);
+        }
     }
+
+    //NUCLEI
+    {
+        target.insert_str(0, "https://"); //Prepend the https:// protocol specifier.
+        let nuclei_scan = NucleiScan::new(output_dir, target);
+        if let Err(err) = nuclei_scan.run() {
+            handle_scan_error(err)
+        }
+    }
+
+    //NUCLEI with https:// prefix.
 
     //NMAP SSL SCAN
     //This scan will perform an SSL scan of the target and automatically report the following findings:
@@ -103,6 +125,8 @@ fn port443_triggers(output_dir: PathBuf, target: String) {
 fn port445_triggers(output_dir: PathBuf, target: String) {
     //Run Nmap scan nmap -sC --scrip smb*
     logger::print_warn("Running smbclient, smb nmap scan, etc.");
+
+    // Report SMB signing disabled here as well.
 }
 
 fn handle_scan_error(err: ScanError) {

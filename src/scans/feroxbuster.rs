@@ -27,14 +27,10 @@ pub struct FeroxbusterScanResult {
 }
 
 impl FeroxbusterScan {
-    pub fn new(mut output_dir: PathBuf, mut target: String, port: u16) -> FeroxbusterScan {
+    pub fn new(mut output_dir: PathBuf, target: &str, port: u16) -> FeroxbusterScan {
         output_dir.push("feroxbuster");
         let mut pathbuf_string = output_dir.to_str().unwrap().to_string();
         pathbuf_string.push_str(&port.to_string());
-
-        target.insert_str(0, "https://"); //Prepend the https:// protocol specifier.
-        target.push_str(":");
-        target.push_str(&port.to_string());
 
         FeroxbusterScan {
             output_file: PathBuf::from(&pathbuf_string),
@@ -46,6 +42,7 @@ impl FeroxbusterScan {
                 String::from("-o"),
                 pathbuf_string,
                 String::from("--json"),
+                String::from("--insecure")
             ],
             port
         }
